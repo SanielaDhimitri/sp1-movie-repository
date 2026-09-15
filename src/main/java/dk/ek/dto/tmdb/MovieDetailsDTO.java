@@ -1,4 +1,4 @@
-package dk.ek.dto.tmdb;
+package dk.ek.dto.tmdb;// Detaljer for én movie fra TMDb, bruges bl.a. til at hente genres.
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

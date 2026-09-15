@@ -13,7 +13,7 @@ public class GenreDAO extends GenericDAO<Genre> {
     }
 
 
-    // READ - Find all genres with their movies
+    // READ - Find all genres with movies
     @Override
     public List<Genre> findAll() {
 
@@ -30,13 +30,38 @@ public class GenreDAO extends GenericDAO<Genre> {
     }
 
 
-    // READ - Find by TMDb ID
+    // READ - Find genre by database ID with movies
+    @Override
+    public Genre findById(Long id) {
+
+        EntityManager em = emf.createEntityManager();
+
+        Genre genre = em.createQuery(
+                        "SELECT DISTINCT g FROM Genre g " +
+                                "LEFT JOIN FETCH g.movies " +
+                                "WHERE g.id = :id",
+                        Genre.class
+                )
+                .setParameter("id", id)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+
+        em.close();
+
+        return genre;
+    }
+
+
+    // READ - Find genre by TMDb ID with movies
     public Genre findByTmdbId(Long tmdbId) {
 
         EntityManager em = emf.createEntityManager();
 
         Genre genre = em.createQuery(
-                        "SELECT g FROM Genre g WHERE g.tmdbId = :tmdbId",
+                        "SELECT DISTINCT g FROM Genre g " +
+                                "LEFT JOIN FETCH g.movies " +
+                                "WHERE g.tmdbId = :tmdbId",
                         Genre.class
                 )
                 .setParameter("tmdbId", tmdbId)

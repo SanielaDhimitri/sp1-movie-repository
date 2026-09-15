@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDate;
 
 
 public class ApiReader {
@@ -52,37 +53,46 @@ public class ApiReader {
     }
 
 
-    // Henter en liste af danske movies fra TMDb og returnerer JSON.
+
+    // Henter alle danske movies fra de sidste 5 år fra TMDb.
     public String discoverMovies(String url, int page) {
+
+        LocalDate today = LocalDate.now();
+        LocalDate fiveYearsAgo = today.minusYears(5);
+
         String buildUrl = url
                 + "?api_key=" + apiKey
                 + "&with_origin_country=DK"
-                + "&primary_release_date.gte=2021-01-01"
-                + "&primary_release_date.lte=2026-12-31"
+                + "&primary_release_date.gte=" + fiveYearsAgo
+                + "&primary_release_date.lte=" + today
                 + "&page=" + page;
 
-    try {
-        HttpClient client = HttpClient.newHttpClient();
+        try {
+            HttpClient client = HttpClient.newHttpClient();
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI(buildUrl))
-                .GET()
-                .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(buildUrl))
+                    .GET()
+                    .build();
 
-        HttpResponse<String> response =
-                client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response =
+                    client.send(
+                            request,
+                            HttpResponse.BodyHandlers.ofString()
+                    );
 
-        if (response.statusCode() != 200) {
-            throw new RuntimeException(
-                    "GET request failed. Status code: " + response.statusCode()
-            );
+            if (response.statusCode() != 200) {
+                throw new RuntimeException(
+                        "GET request failed. Status code: "
+                                + response.statusCode()
+                );
+            }
+
+            return response.body();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        return response.body();
-
-    } catch (Exception e) {
-        throw new RuntimeException(e);
-    }
     }
 
     // Henter actors og crew for en movie fra TMDb.

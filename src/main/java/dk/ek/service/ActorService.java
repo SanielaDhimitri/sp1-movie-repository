@@ -5,6 +5,7 @@ import dk.ek.dto.tmdb.ActorDTO;
 import dk.ek.dto.response.ActorResponseDTO;
 import dk.ek.entity.Actor;
 import dk.ek.entity.Movie;
+import dk.ek.exceptions.ApiException;
 
 import java.util.List;
 
@@ -18,15 +19,25 @@ public class ActorService {
 
 
     // CREATE
+// Modtager ActorDTO,
+// konverterer DTO til Entity og gemmer Actor i databasen.
     public ActorResponseDTO createActor(ActorDTO actorDTO) {
 
-        Actor actor = new Actor(
-                actorDTO.id(),
-                actorDTO.name()
-        );
+        // Tjekker om actor allerede findes i databasen.
+        Actor existingActor =
+                actorDAO.findByTmdbId(actorDTO.id());
 
+        if (existingActor != null) {
+            return toDTO(existingActor);
+        }
+
+        // DTO -> Entity
+        Actor actor = toEntity(actorDTO);
+
+        // Gemmer Actor Entity i databasen.
         actorDAO.create(actor);
 
+        // Entity -> ResponseDTO
         return toDTO(actor);
     }
 
@@ -48,7 +59,11 @@ public class ActorService {
         Actor actor = actorDAO.findById(id);
 
         if (actor == null) {
-            return null;
+            throw new ApiException(
+                    404,
+                    "Actor with id " + id + " was not found in the database."
+            );
+
         }
 
         return toDTO(actor);
@@ -61,12 +76,14 @@ public class ActorService {
         Actor actor = actorDAO.findByTmdbId(tmdbId);
 
         if (actor == null) {
-            return null;
+            throw new ApiException(
+                    404,
+                    "Actor with TMDb id " + tmdbId + " was not found in the database."
+            );
         }
 
         return toDTO(actor);
     }
-
 
     // UPDATE
     public ActorResponseDTO updateActor(Long id, ActorDTO actorDTO) {
@@ -74,16 +91,23 @@ public class ActorService {
         Actor actor = actorDAO.findById(id);
 
         if (actor == null) {
-            return null;
+            throw new ApiException(
+                    404,
+                    "Actor with id " + id + " was not found in the database."
+            );
         }
 
         actor.setTmdbId(actorDTO.id());
         actor.setName(actorDTO.name());
 
-        Actor updatedActor = actorDAO.update(actor);
+        actorDAO.update(actor);
+
+        // Henter actor igen med movies
+        Actor updatedActor = actorDAO.findById(id);
 
         return toDTO(updatedActor);
     }
+
 
 
     // DELETE
@@ -92,14 +116,24 @@ public class ActorService {
         Actor actor = actorDAO.findById(id);
 
         if (actor == null) {
-            return false;
+            throw new ApiException(
+                    404,
+                    "Actor with id " + id + " was not found in the database."
+            );
         }
 
         actorDAO.delete(id);
 
         return true;
     }
+    // DTO -> ENTITY
+    private Actor toEntity(ActorDTO actorDTO) {
 
+        return new Actor(
+                actorDTO.id(),
+                actorDTO.name()
+        );
+    }
 
     // ENTITY -> RESPONSE DTO
     private ActorResponseDTO toDTO(Actor actor) {

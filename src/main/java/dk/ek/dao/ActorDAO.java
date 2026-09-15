@@ -1,4 +1,4 @@
-package dk.ek.dao;
+package dk.ek.dao; // Kommunikerer med DB gennem JPA og arbejder med Entities
 
 import dk.ek.entity.Actor;
 import jakarta.persistence.EntityManager;
@@ -29,14 +29,37 @@ public class ActorDAO extends GenericDAO<Actor> {
         return actors;
     }
 
+    // READ - Find actor by database ID with movies
+    @Override
+    public Actor findById(Long id) {
 
-    // READ - Find by TMDb ID
+        EntityManager em = emf.createEntityManager();
+
+        Actor actor = em.createQuery(
+                        "SELECT DISTINCT a FROM Actor a " +
+                                "LEFT JOIN FETCH a.movies " +
+                                "WHERE a.id = :id",
+                        Actor.class
+                )
+                .setParameter("id", id)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+
+        em.close();
+
+        return actor;
+    }
+
+    // READ - Find actor by TMDb ID with movies
     public Actor findByTmdbId(Long tmdbId) {
 
         EntityManager em = emf.createEntityManager();
 
         Actor actor = em.createQuery(
-                        "SELECT a FROM Actor a WHERE a.tmdbId = :tmdbId",
+                        "SELECT DISTINCT a FROM Actor a " +
+                                "LEFT JOIN FETCH a.movies " +
+                                "WHERE a.tmdbId = :tmdbId",
                         Actor.class
                 )
                 .setParameter("tmdbId", tmdbId)

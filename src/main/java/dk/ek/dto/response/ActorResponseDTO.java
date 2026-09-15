@@ -1,4 +1,4 @@
-package dk.ek.dto.response;
+package dk.ek.dto.response;// når vi læser fra db
 
 import java.util.List;
 

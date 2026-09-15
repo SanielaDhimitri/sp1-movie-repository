@@ -16,6 +16,4 @@ public record CreditsDTO(
 ) {
 }
 
-//CreditsDTO
-// ├── cast → List<ActorDTO>
-// └── crew → List<CrewDTO>
+

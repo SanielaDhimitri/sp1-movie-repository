@@ -1,6 +1,7 @@
-package dk.ek.dto.response;//data som Service returner i Main/controller
+package dk.ek.dto.response;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record MovieResponseDTO(
         Long id,
@@ -8,6 +9,9 @@ public record MovieResponseDTO(
         String title,
         LocalDate releaseDate,
         Double rating,
-        Double popularity
+        Double popularity,
+        List<String> actors,
+        String director,
+        List<String> genres
 ) {
 }

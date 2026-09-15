@@ -1,4 +1,5 @@
-package dk.ek.dto.tmdb;//response/lista der kommer fra TMDb
+//sider, list movie, antal sider i alt, anytal movie i alt
+package dk.ek.dto.tmdb;//response fra tmdb/lista der kommer fra TMDb
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -17,5 +18,7 @@ public record MovieResultDTO(
         int totalResults
 ) {
 }
+
+
 // MovieResultDTO indeholder en liste af MovieDTO fra TMDb.
 //MovieDTO repræsenterer én movie.

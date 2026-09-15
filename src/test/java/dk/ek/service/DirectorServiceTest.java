@@ -3,7 +3,9 @@ package dk.ek.service;
 import dk.ek.config.HibernateTestConfig;
 import dk.ek.dao.DirectorDAO;
 import dk.ek.dto.response.DirectorResponseDTO;
+import dk.ek.dto.tmdb.CrewDTO;
 import dk.ek.entity.Director;
+import dk.ek.exceptions.ApiException;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.*;
 
@@ -18,16 +20,23 @@ class DirectorServiceTest {
     private DirectorDAO directorDAO;
     private DirectorService directorService;
 
+
     @BeforeAll
     static void setUpAll() {
         emf = HibernateTestConfig.getEntityManagerFactory();
     }
+
 
     @BeforeEach
     void setUp() {
         directorDAO = new DirectorDAO(emf);
         directorService = new DirectorService(directorDAO);
     }
+
+
+    // =========================================================
+    // READ BY DATABASE ID
+    // =========================================================
 
     @Test
     void shouldGetDirectorById() {
@@ -46,6 +55,24 @@ class DirectorServiceTest {
         assertEquals("Test Director", result.name());
     }
 
+
+    // ERROR - DATABASE ID DOES NOT EXIST
+    @Test
+    void shouldThrowExceptionWhenDirectorDoesNotExist() {
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> directorService.getDirectorById(999999999L)
+        );
+
+        assertEquals(404, exception.getCode());
+    }
+
+
+    // =========================================================
+    // READ ALL
+    // =========================================================
+
     @Test
     void shouldGetAllDirectors() {
 
@@ -62,6 +89,11 @@ class DirectorServiceTest {
         assertNotNull(directors);
         assertFalse(directors.isEmpty());
     }
+
+
+    // =========================================================
+    // READ BY TMDB ID
+    // =========================================================
 
     @Test
     void shouldGetDirectorByTmdbId() {
@@ -80,17 +112,113 @@ class DirectorServiceTest {
         assertEquals("TMDb Director Test", result.name());
     }
 
+
+    // ERROR - TMDB ID DOES NOT EXIST
     @Test
-    void shouldReturnNullWhenDirectorDoesNotExist() {
+    void shouldThrowExceptionWhenDirectorTmdbIdDoesNotExist() {
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> directorService.getDirectorByTmdbId(999999999L)
+        );
+
+        assertEquals(404, exception.getCode());
+    }
+
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    @Test
+    void shouldUpdateDirector() {
+
+        Director director = new Director(
+                400004L,
+                "Old Director Name"
+        );
+
+        directorDAO.create(director);
+
+        CrewDTO updatedDTO = new CrewDTO(
+                400004L,
+                "New Director Name",
+                "Director"
+        );
 
         DirectorResponseDTO result =
-                directorService.getDirectorById(999999999L);
+                directorService.updateDirector(
+                        director.getId(),
+                        updatedDTO
+                );
 
-        assertNull(result);
+        assertNotNull(result);
+        assertEquals("New Director Name", result.name());
     }
+
+
+    // ERROR - DIRECTOR DOES NOT EXIST
+    @Test
+    void shouldThrowExceptionWhenUpdatingDirectorDoesNotExist() {
+
+        CrewDTO directorDTO = new CrewDTO(
+                999999999L,
+                "Unknown Director",
+                "Director"
+        );
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> directorService.updateDirector(
+                        999999999L,
+                        directorDTO
+                )
+        );
+
+        assertEquals(404, exception.getCode());
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    @Test
+    void shouldDeleteDirector() {
+
+        Director director = new Director(
+                400005L,
+                "Delete Director"
+        );
+
+        directorDAO.create(director);
+
+        Long id = director.getId();
+
+        boolean deleted =
+                directorService.deleteDirector(id);
+
+        assertTrue(deleted);
+        assertNull(directorDAO.findById(id));
+    }
+
+
+    // ERROR - DIRECTOR DOES NOT EXIST
+    @Test
+    void shouldThrowExceptionWhenDeletingDirectorDoesNotExist() {
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> directorService.deleteDirector(999999999L)
+        );
+
+        assertEquals(404, exception.getCode());
+    }
+
 
     @AfterAll
     static void tearDownAll() {
+
         if (emf != null) {
             emf.close();
         }

@@ -1,4 +1,4 @@
-package dk.ek.dao;
+package dk.ek.dao; //Testcontainers
 
 import dk.ek.config.HibernateTestConfig;
 import dk.ek.entity.Actor;

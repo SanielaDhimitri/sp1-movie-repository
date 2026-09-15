@@ -13,8 +13,51 @@ public class MovieDAO extends GenericDAO<Movie> {
     }
 
 
-    // Finder en movie ud fra TMDb ID.
-    // Denne metode er specifik for Movie og findes derfor ikke i GenericDAO.
+    // =========================================================
+    // READ - FIND ALL WITH RELATIONSHIPS
+    // =========================================================
+
+    @Override
+    public List<Movie> findAll() {
+
+        EntityManager em = emf.createEntityManager();
+
+        List<Movie> movies = em.createQuery(
+                "SELECT m FROM Movie m",
+                Movie.class
+        ).getResultList();
+
+        initializeRelationships(movies);
+
+        em.close();
+
+        return movies;
+    }
+
+
+    // =========================================================
+    // READ - FIND BY DATABASE ID WITH RELATIONSHIPS
+    // =========================================================
+
+    @Override
+    public Movie findById(Long id) {
+
+        EntityManager em = emf.createEntityManager();
+
+        Movie movie = em.find(Movie.class, id);
+
+        initializeRelationships(movie);
+
+        em.close();
+
+        return movie;
+    }
+
+
+    // =========================================================
+    // READ - FIND BY TMDB ID WITH RELATIONSHIPS
+    // =========================================================
+
     public Movie findByTmdbId(Long tmdbId) {
 
         EntityManager em = emf.createEntityManager();
@@ -28,11 +71,18 @@ public class MovieDAO extends GenericDAO<Movie> {
                 .findFirst()
                 .orElse(null);
 
+        initializeRelationships(movie);
+
         em.close();
 
         return movie;
     }
-    // SEARCH - Find movies by title
+
+
+    // =========================================================
+    // SEARCH BY TITLE
+    // =========================================================
+
     public List<Movie> searchByTitle(String title) {
 
         EntityManager em = emf.createEntityManager();
@@ -45,11 +95,18 @@ public class MovieDAO extends GenericDAO<Movie> {
                 .setParameter("title", "%" + title + "%")
                 .getResultList();
 
+        initializeRelationships(movies);
+
         em.close();
 
         return movies;
     }
-    // Gennemsnitlig rating
+
+
+    // =========================================================
+    // AVERAGE RATING
+    // =========================================================
+
     public Double getAverageRating() {
 
         EntityManager em = emf.createEntityManager();
@@ -65,7 +122,10 @@ public class MovieDAO extends GenericDAO<Movie> {
     }
 
 
-    // Top 10 højeste rating
+    // =========================================================
+    // TOP 10 HIGHEST RATED
+    // =========================================================
+
     public List<Movie> getTop10HighestRated() {
 
         EntityManager em = emf.createEntityManager();
@@ -77,13 +137,18 @@ public class MovieDAO extends GenericDAO<Movie> {
                 .setMaxResults(10)
                 .getResultList();
 
+        initializeRelationships(movies);
+
         em.close();
 
         return movies;
     }
 
 
-    // Top 10 laveste rating
+    // =========================================================
+    // TOP 10 LOWEST RATED
+    // =========================================================
+
     public List<Movie> getTop10LowestRated() {
 
         EntityManager em = emf.createEntityManager();
@@ -97,13 +162,18 @@ public class MovieDAO extends GenericDAO<Movie> {
                 .setMaxResults(10)
                 .getResultList();
 
+        initializeRelationships(movies);
+
         em.close();
 
         return movies;
     }
 
 
-    // Top 10 mest populære
+    // =========================================================
+    // TOP 10 MOST POPULAR
+    // =========================================================
+
     public List<Movie> getTop10MostPopular() {
 
         EntityManager em = emf.createEntityManager();
@@ -115,8 +185,58 @@ public class MovieDAO extends GenericDAO<Movie> {
                 .setMaxResults(10)
                 .getResultList();
 
+        initializeRelationships(movies);
+
         em.close();
 
         return movies;
+    }
+
+
+    // =========================================================
+    // FIND MOVIES BY GENRE
+    // =========================================================
+
+    public List<Movie> findMoviesByGenre(Long genreId) {
+
+        EntityManager em = emf.createEntityManager();
+
+        List<Movie> movies = em.createQuery(
+                        "SELECT DISTINCT m FROM Movie m " +
+                                "JOIN m.genres g " +
+                                "WHERE g.id = :genreId",
+                        Movie.class
+                )
+                .setParameter("genreId", genreId)
+                .getResultList();
+
+        initializeRelationships(movies);
+
+        em.close();
+
+        return movies;
+    }
+
+
+    // =========================================================
+    // INITIALIZE RELATIONSHIPS
+    // =========================================================
+
+    private void initializeRelationships(Movie movie) {
+
+        if (movie != null) {
+            movie.getActors().size();
+            movie.getGenres().size();
+
+            if (movie.getDirector() != null) {
+                movie.getDirector().getName();
+            }
+        }
+    }
+
+
+    private void initializeRelationships(List<Movie> movies) {
+
+        movies.forEach(this::initializeRelationships);
     }
 }

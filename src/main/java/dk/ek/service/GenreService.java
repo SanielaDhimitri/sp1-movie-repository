@@ -5,6 +5,7 @@ import dk.ek.dto.tmdb.GenreDTO;
 import dk.ek.dto.response.GenreResponseDTO;
 import dk.ek.entity.Genre;
 import dk.ek.entity.Movie;
+import dk.ek.exceptions.ApiException;
 
 import java.util.List;
 
@@ -17,24 +18,41 @@ public class GenreService {
     }
 
 
+    // =========================================================
     // CREATE
+    // =========================================================
+
+    // Modtager GenreDTO,
+    // konverterer DTO til Entity og gemmer Genre i databasen.
     public GenreResponseDTO createGenre(GenreDTO genreDTO) {
 
-        Genre genre = new Genre(
-                genreDTO.id(),
-                genreDTO.name()
-        );
+        // Tjekker om genre allerede findes i databasen.
+        Genre existingGenre =
+                genreDAO.findByTmdbId(genreDTO.id());
 
+        if (existingGenre != null) {
+            return toDTO(existingGenre);
+        }
+
+        // DTO -> Entity
+        Genre genre = toEntity(genreDTO);
+
+        // Gemmer Genre Entity i databasen.
         genreDAO.create(genre);
 
+        // Entity -> ResponseDTO
         return toDTO(genre);
     }
 
 
-    // READ - Henter alle genres fra databasen
+    // =========================================================
+    // READ ALL
+    // =========================================================
+
     public List<GenreResponseDTO> getAllGenres() {
 
-        List<Genre> genres = genreDAO.findAll();
+        List<Genre> genres =
+                genreDAO.findAll();
 
         return genres.stream()
                 .map(this::toDTO)
@@ -42,61 +60,93 @@ public class GenreService {
     }
 
 
-    // READ - Finder en genre via database-id
+    // =========================================================
+    // READ BY DATABASE ID
+    // =========================================================
+
     public GenreResponseDTO getGenreById(Long id) {
 
-        Genre genre = genreDAO.findById(id);
+        Genre genre =
+                genreDAO.findById(id);
 
         if (genre == null) {
-            return null;
+            throw new ApiException(
+                    404,
+                    "Genre with id " + id + " was not found in the database."
+            );
         }
 
         return toDTO(genre);
     }
 
 
-    // READ - Finder en genre via TMDb-id
+    // =========================================================
+    // READ BY TMDB ID
+    // =========================================================
+
     public GenreResponseDTO getGenreByTmdbId(Long tmdbId) {
 
-        Genre genre = genreDAO.findByTmdbId(tmdbId);
+        Genre genre =
+                genreDAO.findByTmdbId(tmdbId);
 
         if (genre == null) {
-            return null;
+            throw new ApiException(
+                    404,
+                    "Genre with TMDb id " + tmdbId + " was not found in the database."
+            );
         }
 
         return toDTO(genre);
     }
 
 
-    // UPDATE
+// =========================================================
+// UPDATE
+// =========================================================
+
     public GenreResponseDTO updateGenre(
             Long id,
             GenreDTO genreDTO
     ) {
 
-        Genre genre = genreDAO.findById(id);
+        Genre genre =
+                genreDAO.findById(id);
 
         if (genre == null) {
-            return null;
+            throw new ApiException(
+                    404,
+                    "Genre with id " + id + " was not found in the database."
+            );
         }
 
         genre.setTmdbId(genreDTO.id());
         genre.setName(genreDTO.name());
 
+        // Gemmer ændringerne i databasen
+        genreDAO.update(genre);
+
+        // Henter genre igen med movies
         Genre updatedGenre =
-                genreDAO.update(genre);
+                genreDAO.findById(id);
 
         return toDTO(updatedGenre);
     }
 
 
+    // =========================================================
     // DELETE
+    // =========================================================
+
     public boolean deleteGenre(Long id) {
 
-        Genre genre = genreDAO.findById(id);
+        Genre genre =
+                genreDAO.findById(id);
 
         if (genre == null) {
-            return false;
+            throw new ApiException(
+                    404,
+                    "Genre with id " + id + " was not found in the database."
+            );
         }
 
         genreDAO.delete(id);
@@ -105,7 +155,23 @@ public class GenreService {
     }
 
 
+    // =========================================================
+    // DTO -> ENTITY
+    // =========================================================
+
+    private Genre toEntity(GenreDTO genreDTO) {
+
+        return new Genre(
+                genreDTO.id(),
+                genreDTO.name()
+        );
+    }
+
+
+    // =========================================================
     // ENTITY -> RESPONSE DTO
+    // =========================================================
+
     private GenreResponseDTO toDTO(Genre genre) {
 
         List<String> movies = genre.getMovies()

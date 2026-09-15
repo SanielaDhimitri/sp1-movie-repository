@@ -7,17 +7,12 @@ import dk.ek.dao.DirectorDAO;
 import dk.ek.dao.GenreDAO;
 import dk.ek.dao.MovieDAO;
 import dk.ek.dto.tmdb.*;
-import dk.ek.entity.Actor;
-import dk.ek.entity.Director;
-import dk.ek.entity.Genre;
-import dk.ek.entity.Movie;
 import dk.ek.service.ActorService;
 import dk.ek.service.DirectorService;
 import dk.ek.service.GenreService;
 import dk.ek.service.MovieService;
 import jakarta.persistence.EntityManagerFactory;
 
-import java.time.LocalDate;
 
 public class Main {
 
@@ -25,16 +20,14 @@ public class Main {
 
         // ---------- SETUP ----------
 
-        // Opretter forbindelse til databasen gennem Hibernate.
-        EntityManagerFactory emf =
-                HibernateConfig.getEntityManagerFactory();
+        //  forbindelse til db (gennem Hibernate).
+        EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
 
-        // Henter TMDb API key fra environment variable.
+        // Henter TMDb API key (fra environment variable.)
         String apiKey = System.getenv("API_KEY");
 
-        // Stopper programmet hvis API key mangler.
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException(
+        // Stopper, hvis API key mangler.
+        if (apiKey == null || apiKey.isBlank()) {throw new IllegalStateException(
                     "API_KEY environment variable mangler."
             );
         }
@@ -43,19 +36,17 @@ public class Main {
         ApiReader apiReader = new ApiReader(apiKey);
 
 
-        // ---------- GENRES FRA TMDb ----------
+        // ----------fetch data: GENRES FRA TMDb REST API + JSON → DTO me Jackson
+        // (gemmes ikke i db.for Bruges ikke service+DAO)
 
-        // TMDb endpoint til movie genres.
-        String genreUrl =
-                "https://api.themoviedb.org/3/genre/movie/list";
+        // TMDb main/endpoint til movie genres.
+        String genreUrl = "https://api.themoviedb.org/3/genre/movie/list";
 
         // Henter genres fra TMDb som JSON.
-        String genreJson =
-                apiReader.getGenres(genreUrl);
+        String genreJson = apiReader.getGenres(genreUrl);
 
-        // Konverterer JSON til GenreResultDTO med Jackson.
-        GenreResultDTO genreResultDTO =
-                apiReader.convertGenresFromJson(genreJson);
+        // JSON til DTO med Jackson.
+        GenreResultDTO genreResultDTO = apiReader.convertGenresFromJson(genreJson);
 
         // Viser alle genres fra TMDb.
         for (GenreDTO genreDTO : genreResultDTO.genres()) {
@@ -76,8 +67,8 @@ public class Main {
 
         // ---------- SERVICE LAYER ----------
 
-        // Opretter services, som bruger DAO-laget.
-        MovieService movieService = new MovieService(movieDAO);
+        // Opretter services, som bruger DAO-laget fra main.
+        MovieService movieService = new MovieService(movieDAO, actorDAO, directorDAO, genreDAO);
         ActorService actorService = new ActorService(actorDAO);
         DirectorService directorService = new DirectorService(directorDAO);
         GenreService genreService = new GenreService(genreDAO);
@@ -85,550 +76,218 @@ public class Main {
 
         // ==========================================================
         // GODZILLA EKSEMPEL
-        // Viser processen for én movie:
-        // TMDb API -> JSON -> DTO -> Entity -> DAO -> Database
+        // Henter Godzilla-data fra TMDb og konverterer JSON til DTO'er.
+       // Til sidst hentes Godzilla fra databasen gennem MovieService.
+        // Main opretter ikke Entities og gemmer ikke direkte via DAO.
         // ==========================================================
 
-        // TMDb adresse/endpoint til movie credits og details.
-        String creditsUrl =
-                "https://api.themoviedb.org/3/movie";
+        String creditsUrl = "https://api.themoviedb.org/3/movie";
 
-        // Henter credits (actors og crew) for Godzilla, TMDb ID 1678.
-        String creditsJson =
-                apiReader.getMovieCredits(creditsUrl, 1678);
+        // Henter credits for Godzilla (TMDb ID 1678).
+        String creditsJson = apiReader.getMovieCredits(creditsUrl, 1678);
 
-        // Konverterer credits JSON til CreditsDTO med Jackson.
-        CreditsDTO creditsDTO =
-                apiReader.convertCreditsFromJson(creditsJson);
+        CreditsDTO creditsDTO = apiReader.convertCreditsFromJson(creditsJson);
 
-        // Opretter en Movie entity for Godzilla.
-        Movie movie = new Movie(
-                1678L,
-                "Godzilla",
-                LocalDate.of(1954, 11, 3),
-                7.6,
-                10.0
+        // Henter details for Godzilla.
+        String detailsJson = apiReader.getMovieDetails(creditsUrl, 1678);
+
+        MovieDetailsDTO movieDetailsDTO = apiReader.convertMovieDetailsFromJson(detailsJson);
+
+        System.out.println("\n========== GODZILLA ==========");
+        System.out.println("Title: " + movieDetailsDTO.title());
+
+        System.out.println("\nGenres:");
+        movieDetailsDTO.genres().forEach(
+                genre -> System.out.println("- " + genre.name())
         );
 
-        // Henter detaljer for Godzilla fra TMDb som JSON.
-        String detailsJson =
-                apiReader.getMovieDetails(creditsUrl, 1678);
 
-        // Konverterer JSON til MovieDetailsDTO med Jackson.
-        MovieDetailsDTO movieDetailsDTO =
-                apiReader.convertMovieDetailsFromJson(detailsJson);
-
-
-        // ---------- GODZILLA GENRES ----------
-
-        // Gennemgår alle genres, som Godzilla har.
-        for (GenreDTO genreDTO : movieDetailsDTO.genres()) {
-
-            // Tjekker om genren allerede findes i databasen.
-            Genre genre =
-                    genreDAO.findByTmdbId(genreDTO.id());
-
-            // Hvis genren ikke findes, oprettes og gemmes den.
-            if (genre == null) {
-                genre = new Genre(
-                        genreDTO.id(),
-                        genreDTO.name()
+        System.out.println("\nActors:");
+        creditsDTO.cast().stream()
+                .limit(10)
+                .forEach(actor ->
+                        System.out.println("- " + actor.name())
                 );
 
-                genreDAO.create(genre);
-            }
-
-            // Tilføjer genren til Godzilla.
-            movie.getGenres().add(genre);
-
-            System.out.println(
-                    "Godzilla Genre: " + genre.getName()
-            );
-        }
-
-        // Viser antal actors og crew-medlemmer fra TMDb.
-        System.out.println(
-                "Actors: " + creditsDTO.cast().size()
-        );
-
-        System.out.println(
-                "Crew: " + creditsDTO.crew().size()
-        );
-
-
-        // ---------- GODZILLA ACTORS ----------
-
-        // Gennemgår og gemmer actors i databasen.
-        for (ActorDTO actorDTO : creditsDTO.cast()) {
-
-            // Tjekker om actor allerede findes.
-            Actor actor =
-                    actorDAO.findByTmdbId(actorDTO.id());
-
-            // Hvis actor ikke findes, oprettes og gemmes actor.
-            if (actor == null) {
-                actor = new Actor(
-                        actorDTO.id(),
-                        actorDTO.name()
+        creditsDTO.crew().stream()
+                .filter(crew -> "Director".equals(crew.job()))
+                .findFirst()
+                .ifPresent(director ->
+                        System.out.println(
+                                "\nDirector: " + director.name()
+                        )
                 );
 
-                actorDAO.create(actor);
-            }
+        // READ gennem Service Layer.
+        // Godzilla findes allerede i databasen efter importen.
+        System.out.println("\nGodzilla fra database:");
+        System.out.println(
+                movieService.getMovieByTmdbId(1678L)
+        );
 
-            // Tilføjer actor til Godzilla.
-            movie.getActors().add(actor);
+
+        // ==========================================================
+        // BACKEND DEMO - READ, SEARCH OG STATISTIK
+        // ==========================================================
+        System.out.println("\n========== DATABASE ==========");
+
+        System.out.println(
+                "Antal movies: " + movieService.getAllMovies().size()
+        );
+
+        System.out.println("\n========== ALL MOVIES ==========");
+
+        movieService.getAllMovies()
+                .forEach(System.out::println);
+
+        System.out.println("\n========== SEARCH: GODZILLA ==========");
+        movieService.searchByTitle("Godzilla")
+                .forEach(System.out::println);
+
+        System.out.println("\n========== AVERAGE RATING ==========");
+        System.out.println(
+                movieService.getAverageRating()
+        );
+
+        System.out.println("\n========== TOP 10 HIGHEST RATED ==========");
+        movieService.getTop10HighestRated()
+                .forEach(System.out::println);
+
+        System.out.println("\n========== TOP 10 LOWEST RATED ==========");
+        movieService.getTop10LowestRated()
+                .forEach(System.out::println);
+
+        System.out.println("\n========== TOP 10 MOST POPULAR ==========");
+        movieService.getTop10MostPopular()
+                .forEach(System.out::println);
+
+// ==========================================================
+// SERVICE LAYER DEMO
+// Henter data fra databasen gennem de forskellige services.
+// ==========================================================
+
+        System.out.println("\n========== ACTORS ==========");
+        actorService.getAllActors()
+                .stream()
+                .limit(10)
+                .forEach(System.out::println);
+
+        System.out.println("\n========== DIRECTORS ==========");
+        directorService.getAllDirectors()
+                .stream()
+                .limit(10)
+                .forEach(System.out::println);
+
+        System.out.println("\n========== GENRES ==========");
+        genreService.getAllGenres()
+                .forEach(System.out::println);
+
+
+
+        // ==========================================================
+        // DANSKE MOVIES - ONCE-ONLY IMPORT
+        //
+        // Filmene er allerede importeret til databasen.
+        // Sæt IMPORT_DANISH_MOVIES = true KUN hvis databasen
+        // skal fyldes igen.
+        // ==========================================================
+        //once-only operation.
+       // boolean IMPORT_DANISH_MOVIES = true;
+        boolean IMPORT_DANISH_MOVIES = false;
+
+
+        String checkUrl = "https://api.themoviedb.org/3/discover/movie";
+
+        String checkJson = apiReader.discoverMovies(checkUrl, 1);
+
+        MovieResultDTO checkResult =
+                apiReader.convertFromJson(checkJson);
+
+        System.out.println(
+                "Danske filmer af de 5 sidste år: "
+                        + checkResult.totalResults()
+        );
+
+        if (IMPORT_DANISH_MOVIES) {
+
+            String moviesUrl =
+                    "https://api.themoviedb.org/3/discover/movie";
+
+            String firstJson =
+                    apiReader.discoverMovies(moviesUrl, 1);
+
+            MovieResultDTO firstPage =
+                    apiReader.convertFromJson(firstJson);
 
             System.out.println(
-                    "Actor: " + actor.getName()
+                    "Total movies: " + firstPage.totalResults()
             );
-        }
 
+            System.out.println(
+                    "Total pages: " + firstPage.totalPages()
+            );
 
-        // ---------- GODZILLA DIRECTOR ----------
-
-        // Gennemgår crew og finder personen med jobbet Director.
-        for (CrewDTO crewDTO : creditsDTO.crew()) {
-
-            if ("Director".equals(crewDTO.job())) {
-
-                // Tjekker om director allerede findes i databasen.
-                Director director =
-                        directorDAO.findByTmdbId(crewDTO.id());
-
-                // Hvis director ikke findes, oprettes og gemmes director.
-                if (director == null) {
-                    director = new Director(
-                            crewDTO.id(),
-                            crewDTO.name()
-                    );
-
-                    directorDAO.create(director);
-                }
-
-                // Tilføjer director til Godzilla.
-                movie.setDirector(director);
+            for (int page = 1;
+                 page <= firstPage.totalPages();
+                 page++) {
 
                 System.out.println(
-                        "Director: " + director.getName()
+                        "\nHenter side "
+                                + page
+                                + " af "
+                                + firstPage.totalPages()
                 );
 
-                // Vi har fundet director og stopper derfor loopet.
-                break;
-            }
-        }
-
-
-        // ---------- GEMMER GODZILLA ----------
-
-        // Tjekker om Godzilla allerede findes i databasen.
-        Movie existingGodzilla =
-                movieDAO.findByTmdbId(1678L);
-
-        // Gemmer kun Godzilla hvis den ikke allerede findes.
-        if (existingGodzilla == null) {
-            movieDAO.create(movie);
-            System.out.println("Godzilla gemt.");
-        } else {
-            System.out.println("Godzilla findes allerede.");
-        }
-
-
-        // ==========================================================
-        // DANSKE MOVIES
-        // Henter alle danske movies fra de seneste år fra TMDb.
-        // Samme princip som Godzilla-eksemplet bruges for hver movie.
-        // ==========================================================
-
-        // TMDb endpoint til discover movies.
-        String moviesUrl =
-                "https://api.themoviedb.org/3/discover/movie";
-
-        // Henter første side for at finde total antal movies og pages.
-        String firstJson =
-                apiReader.discoverMovies(moviesUrl, 1);
-
-        // Konverterer JSON fra første side til MovieResultDTO.
-        MovieResultDTO firstPage =
-                apiReader.convertFromJson(firstJson);
-
-        // Viser hvor mange movies og pages TMDb returnerer.
-        System.out.println(
-                "Total movies: " + firstPage.totalResults()
-        );
-
-        System.out.println(
-                "Total pages: " + firstPage.totalPages()
-        );
-
-
-        // ---------- GENNEMGÅR ALLE PAGES ----------
-
-        // Går igennem alle sider fra TMDb.
-        for (int page = 1; page <= firstPage.totalPages(); page++) {
-
-            System.out.println(
-                    "\nHenter side "
-                            + page
-                            + " af "
-                            + firstPage.totalPages()
-            );
-
-            // Henter den aktuelle side som JSON.
-            String pageJson =
-                    apiReader.discoverMovies(moviesUrl, page);
-
-            // Konverterer JSON til MovieResultDTO.
-            MovieResultDTO pageResult =
-                    apiReader.convertFromJson(pageJson);
-
-
-            // ---------- GENNEMGÅR MOVIES PÅ SIDEN ----------
-
-            for (MovieDTO movieDTO : pageResult.results()) {
-
-                // Tjekker om movie allerede findes i databasen.
-                Movie existingMovie =
-                        movieDAO.findByTmdbId((long) movieDTO.id());
-
-                // Hvis movie allerede findes, går vi videre til næste movie.
-                if (existingMovie != null) {
-                    System.out.println(
-                            "Movie findes allerede: "
-                                    + existingMovie.getTitle()
-                    );
-                    continue;
-                }
-
-
-                // ---------- RELEASE DATE ----------
-
-                // Release date kan være tom, derfor starter den som null.
-                LocalDate releaseDate = null;
-
-                // Konverterer release date fra String til LocalDate.
-                if (movieDTO.releaseDate() != null
-                        && !movieDTO.releaseDate().isBlank()) {
-
-                    releaseDate =
-                            LocalDate.parse(movieDTO.releaseDate());
-                }
-
-
-                // ---------- MOVIE ENTITY ----------
-
-                // Konverterer MovieDTO-data til en Movie entity.
-                Movie danishMovie = new Movie(
-                        (long) movieDTO.id(),
-                        movieDTO.title(),
-                        releaseDate,
-                        movieDTO.rating(),
-                        movieDTO.popularity()
-                );
-
-
-                // ---------- CREDITS ----------
-
-                // Henter credits for denne movie fra TMDb.
-                String danishCreditsJson =
-                        apiReader.getMovieCredits(
-                                creditsUrl,
-                                movieDTO.id()
+                String pageJson =
+                        apiReader.discoverMovies(
+                                moviesUrl,
+                                page
                         );
 
-                // Konverterer credits JSON til CreditsDTO.
-                CreditsDTO danishCreditsDTO =
-                        apiReader.convertCreditsFromJson(
-                                danishCreditsJson
-                        );
+                MovieResultDTO pageResult =
+                        apiReader.convertFromJson(pageJson);
 
+                for (MovieDTO movieDTO : pageResult.results()) {
 
-                // ---------- ACTORS ----------
-
-                // Gennemgår alle actors for denne movie.
-                for (ActorDTO actorDTO : danishCreditsDTO.cast()) {
-
-                    // Tjekker om actor allerede findes i databasen.
-                    Actor actor =
-                            actorDAO.findByTmdbId(actorDTO.id());
-
-                    // Opretter actor hvis actor ikke allerede findes.
-                    if (actor == null) {
-                        actor = new Actor(
-                                actorDTO.id(),
-                                actorDTO.name()
-                        );
-
-                        actorDAO.create(actor);
-                    }
-
-                    // Tilføjer actor til movie.
-                    danishMovie.getActors().add(actor);
-                }
-
-
-                // ---------- DIRECTOR ----------
-
-                // Gennemgår crew og finder Director.
-                for (CrewDTO crewDTO : danishCreditsDTO.crew()) {
-
-                    if ("Director".equals(crewDTO.job())) {
-
-                        // Tjekker om director allerede findes.
-                        Director director =
-                                directorDAO.findByTmdbId(
-                                        crewDTO.id()
-                                );
-
-                        // Opretter director hvis director ikke findes.
-                        if (director == null) {
-
-                            director = new Director(
-                                    crewDTO.id(),
-                                    crewDTO.name()
+                    String danishCreditsJson =
+                            apiReader.getMovieCredits(
+                                    creditsUrl,
+                                    movieDTO.id()
                             );
 
-                            directorDAO.create(director);
-                        }
+                    CreditsDTO danishCreditsDTO =
+                            apiReader.convertCreditsFromJson(
+                                    danishCreditsJson
+                            );
 
-                        // Tilføjer director til movie.
-                        danishMovie.setDirector(director);
+                    String danishDetailsJson =
+                            apiReader.getMovieDetails(
+                                    creditsUrl,
+                                    movieDTO.id()
+                            );
 
-                        // Stopper når director er fundet.
-                        break;
-                    }
+                    MovieDetailsDTO danishDetailsDTO =
+                            apiReader.convertMovieDetailsFromJson(
+                                    danishDetailsJson
+                            );
+
+                    // Main sender DTO'er til Service Layer.
+                    movieService.createMovieWithRelations(
+                            movieDTO,
+                            danishCreditsDTO,
+                            danishDetailsDTO
+                    );
+
+                    System.out.println(
+                            "Dansk movie: "
+                                    + movieDTO.title()
+                    );
                 }
-
-
-                // ---------- GENRES ----------
-
-                // Henter movie details for at få genres.
-                String danishDetailsJson =
-                        apiReader.getMovieDetails(
-                                creditsUrl,
-                                movieDTO.id()
-                        );
-
-                // Konverterer details JSON til MovieDetailsDTO.
-                MovieDetailsDTO danishDetailsDTO =
-                        apiReader.convertMovieDetailsFromJson(
-                                danishDetailsJson
-                        );
-
-                // Gennemgår alle genres for denne movie.
-                for (GenreDTO genreDTO : danishDetailsDTO.genres()) {
-
-                    // Tjekker om genre allerede findes i databasen.
-                    Genre genre =
-                            genreDAO.findByTmdbId(genreDTO.id());
-
-                    // Opretter genre hvis den ikke findes.
-                    if (genre == null) {
-                        genre = new Genre(
-                                genreDTO.id(),
-                                genreDTO.name()
-                        );
-
-                        genreDAO.create(genre);
-                    }
-
-                    // Tilføjer genre til movie.
-                    danishMovie.getGenres().add(genre);
-                }
-
-
-                // ---------- GEMMER MOVIE ----------
-
-                // Gemmer den færdige movie med relationships i databasen.
-                movieDAO.create(danishMovie);
-
-                System.out.println(
-                        "Dansk movie: " + danishMovie.getTitle()
-                );
             }
         }
 
-
-        // ==========================================================
-        // SERVICE LAYER
-        // Henter data fra vores egen database gennem services.
-        // ==========================================================
-
-        // ---------- ALLE MOVIES ----------
-
-        System.out.println(
-                "\n--- MOVIES FRA DATABASE ---"
-        );
-
-        // Henter og viser alle movies fra databasen.
-        movieService.getAllMovies().forEach(movieResponse -> {
-
-            System.out.println(
-                    movieResponse.title()
-                            + " | TMDb ID: "
-                            + movieResponse.tmdbId()
-                            + " | Rating: "
-                            + movieResponse.rating()
-            );
-        });
-
-
-        // ---------- ACTORS OG MOVIES ----------
-
-        System.out.println(
-                "\n--- ACTORS OG DERES MOVIES ---"
-        );
-
-        // Henter alle actors og viser deres movies.
-        actorService.getAllActors().forEach(actor -> {
-
-            System.out.println(
-                    "\nActor: " + actor.name()
-            );
-
-            actor.movies().forEach(movieTitle ->
-                    System.out.println(
-                            " - " + movieTitle
-                    )
-            );
-        });
-
-
-        // ---------- DIRECTORS OG MOVIES ----------
-
-        System.out.println(
-                "\n--- DIRECTORS OG DERES MOVIES ---"
-        );
-
-        // Henter alle directors og viser deres movies.
-        directorService.getAllDirectors().forEach(director -> {
-
-            System.out.println(
-                    "\nDirector: " + director.name()
-            );
-
-            director.movies().forEach(movieTitle ->
-                    System.out.println(
-                            " - " + movieTitle
-                    )
-            );
-        });
-
-
-        // ---------- GENRES OG MOVIES ----------
-
-        System.out.println(
-                "\n--- GENRES OG DERES MOVIES ---"
-        );
-
-        // Henter alle genres og viser movies inden for hver genre.
-        genreService.getAllGenres().forEach(genre -> {
-
-            System.out.println(
-                    "\nGenre: " + genre.name()
-            );
-
-            genre.movies().forEach(movieTitle ->
-                    System.out.println(
-                            " - " + movieTitle
-                    )
-            );
-        });
-
-
-        // ==========================================================
-        // SEARCH
-        // ==========================================================
-
-        System.out.println(
-                "\n--- SEARCH MOVIE BY TITLE ---"
-        );
-
-        // Søger efter movies hvor titlen indeholder "land".
-        movieService.searchByTitle("land")
-                .forEach(movieDTO -> {
-
-                    System.out.println(
-                            movieDTO.title()
-                                    + " | Rating: "
-                                    + movieDTO.rating()
-                    );
-                });
-
-
-        // ==========================================================
-        // MOVIE STATISTICS
-        // ==========================================================
-
-        System.out.println(
-                "\n--- MOVIE STATISTICS ---"
-        );
-
-
-        // ---------- AVERAGE RATING ----------
-
-        // Beregner den gennemsnitlige rating for alle movies.
-        Double averageRating =
-                movieService.getAverageRating();
-
-        System.out.println(
-                "Average rating: " + averageRating
-        );
-
-
-        // ---------- TOP 10 HIGHEST RATED ----------
-
-        System.out.println(
-                "\n--- TOP 10 HIGHEST RATED ---"
-        );
-
-        // Henter de 10 movies med højeste rating.
-        movieService.getTop10HighestRated()
-                .forEach(movieDTO ->
-                        System.out.println(
-                                movieDTO.title()
-                                        + " | Rating: "
-                                        + movieDTO.rating()
-                        )
-                );
-
-
-        // ---------- TOP 10 LOWEST RATED ----------
-
-        System.out.println(
-                "\n--- TOP 10 LOWEST RATED ---"
-        );
-
-        // Henter de 10 movies med laveste rating.
-        movieService.getTop10LowestRated()
-                .forEach(movieDTO ->
-                        System.out.println(
-                                movieDTO.title()
-                                        + " | Rating: "
-                                        + movieDTO.rating()
-                        )
-                );
-
-
-        // ---------- TOP 10 MOST POPULAR ----------
-
-        System.out.println(
-                "\n--- TOP 10 MOST POPULAR ---"
-        );
-
-        // Henter de 10 mest populære movies.
-        movieService.getTop10MostPopular()
-                .forEach(movieDTO ->
-                        System.out.println(
-                                movieDTO.title()
-                                        + " | Popularity: "
-                                        + movieDTO.popularity()
-                        )
-                );
-
-
-        // ---------- SHUTDOWN ----------
-
-        // Lukker forbindelsen til databasen når programmet er færdigt.
+        // Lukker EntityManagerFactory når programmet er færdigt.
         emf.close();
     }
 }
+

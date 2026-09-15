@@ -20,10 +20,20 @@ public class Director {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "tmdb_id", unique = true)
+    @Column(
+            name = "tmdb_id",
+            unique = true,
+            nullable = false
+    )
     private Long tmdbId;
 
+    @Column(
+            name = "name",
+            nullable = false,
+            length = 255
+    )
     private String name;
+
     @OneToMany(mappedBy = "director")
     private Set<Movie> movies = new HashSet<>();
 
