@@ -16,15 +16,16 @@ public class GenericDAO<T> {
     }
 
     // CREATE
+    //DAO tag entity
     public void create(T entity) {
-
+//arbejder med db
         EntityManager em = emf.createEntityManager();
 
         em.getTransaction().begin();
-        em.persist(entity);
-        em.getTransaction().commit();
+        em.persist(entity);//gemmer Entity-n i db
+        em.getTransaction().commit();//konfirmmer
 
-        em.close();
+        em.close();//likker em
     }
 
 

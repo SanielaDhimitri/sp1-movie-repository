@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record CreditsDTO(
+public record CreditsResultDTO(
 
         @JsonProperty("cast")
         List<ActorDTO> cast,

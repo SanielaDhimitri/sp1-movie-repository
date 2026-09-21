@@ -3,7 +3,7 @@ package dk.ek.service;
 import dk.ek.config.HibernateTestConfig;
 import dk.ek.dao.ActorDAO;
 import dk.ek.dao.MovieDAO;
-import dk.ek.dto.response.ActorResponseDTO;
+import dk.ek.dto.dbresponse.ActorResponseDTO;
 import dk.ek.dto.tmdb.ActorDTO;
 import dk.ek.entity.Actor;
 import dk.ek.exceptions.ApiException;

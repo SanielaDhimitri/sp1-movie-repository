@@ -5,7 +5,7 @@ import dk.ek.dao.ActorDAO;
 import dk.ek.dao.DirectorDAO;
 import dk.ek.dao.GenreDAO;
 import dk.ek.dao.MovieDAO;
-import dk.ek.dto.response.MovieResponseDTO;
+import dk.ek.dto.dbresponse.MovieResponseDTO;
 import dk.ek.dto.tmdb.*;
 import dk.ek.entity.Genre;
 import dk.ek.entity.Movie;
@@ -19,8 +19,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import dk.ek.entity.Actor;
 import dk.ek.entity.Director;
-import dk.ek.entity.Genre;
-import java.time.LocalDate;
 
 class MovieServiceTest {
 
@@ -124,8 +122,8 @@ class MovieServiceTest {
                         "Test Genre"
                 );
 
-        CreditsDTO creditsDTO =
-                new CreditsDTO(
+        CreditsResultDTO creditsResultDTO =
+                new CreditsResultDTO(
                         List.of(actorDTO),
                         List.of(directorDTO)
                 );
@@ -140,7 +138,7 @@ class MovieServiceTest {
         MovieResponseDTO result =
                 movieService.createMovieWithRelations(
                         movieDTO,
-                        creditsDTO,
+                        creditsResultDTO,
                         detailsDTO
                 );
 
@@ -615,6 +613,73 @@ class MovieServiceTest {
 
         assertTrue(
                 result.genres().contains("Test Genre")
+        );
+    }
+
+    // BONUS 3 - Sletter movies som ikke længere findes i TMDb
+    @Test
+    void shouldDeleteMoviesNotInTmdb() {
+
+        // Opretter en test-movie i databasen
+        Movie movie = new Movie(
+                999999L,
+                "BONUS 3 DELETE TEST",
+                LocalDate.of(2025, 1, 1),
+                7.0,
+                10.0
+        );
+
+        movieDAO.create(movie);
+
+        // Listen simulerer de movies, som stadig findes i TMDb.
+        // 999999L er ikke med i listen.
+        List<Long> tmdbMovieIds = List.of(
+                111111L,
+                222222L
+        );
+
+        // Kalder Bonus 3-metoden
+        movieService.deleteMoviesNotInTmdb(tmdbMovieIds);
+
+        // Kontrollerer at test-movie er blevet slettet
+        Movie deletedMovie =
+                movieDAO.findById(movie.getId());
+
+        assertNull(deletedMovie);
+    }
+    // BONUS 3 - Beholder movie hvis den stadig findes i TMDb
+    @Test
+    void shouldNotDeleteMovieIfItStillExistsInTmdb() {
+
+        // Opretter en test-movie i databasen
+        Movie movie = new Movie(
+                888888L,
+                "BONUS 3 KEEP TEST",
+                LocalDate.of(2025, 1, 1),
+                8.0,
+                20.0
+        );
+
+        movieDAO.create(movie);
+
+        // Movie med TMDb-id 888888 findes stadig i TMDb-listen
+        List<Long> tmdbMovieIds = List.of(
+                888888L
+        );
+
+        // Kalder Bonus 3-metoden
+        movieService.deleteMoviesNotInTmdb(tmdbMovieIds);
+
+        // Henter movie igen fra databasen
+        Movie existingMovie =
+                movieDAO.findById(movie.getId());
+
+        // Kontrollerer at movie IKKE blev slettet
+        assertNotNull(existingMovie);
+
+        assertEquals(
+                "BONUS 3 KEEP TEST",
+                existingMovie.getTitle()
         );
     }
     // =========================================================

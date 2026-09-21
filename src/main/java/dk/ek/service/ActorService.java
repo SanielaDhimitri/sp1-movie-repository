@@ -2,7 +2,7 @@ package dk.ek.service;
 
 import dk.ek.dao.ActorDAO;
 import dk.ek.dto.tmdb.ActorDTO;
-import dk.ek.dto.response.ActorResponseDTO;
+import dk.ek.dto.dbresponse.ActorResponseDTO;
 import dk.ek.entity.Actor;
 import dk.ek.entity.Movie;
 import dk.ek.exceptions.ApiException;
@@ -151,3 +151,8 @@ public class ActorService {
         );
     }
 }
+
+// ApiReader henter JSON-data og konverterer dem til DTO'er med Jackson.
+// Service modtager DTO'erne og konverterer dem til Entities.
+// DAO bruger Entities til at gemme data i databasen.
+//DAO komunikon me PostgreSQL përmes JPA/Hibernate

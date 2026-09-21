@@ -1,8 +1,8 @@
-package dk.ek.dto.response;
+package dk.ek.dto.dbresponse;
 
 import java.util.List;
 
-public record GenreResponseDTO(
+public record DirectorResponseDTO(
         Long id,
         Long tmdbId,
         String name,

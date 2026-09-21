@@ -1,8 +1,8 @@
-package dk.ek.dto.response;// når vi læser fra db
+package dk.ek.dto.dbresponse;
 
 import java.util.List;
 
-public record ActorResponseDTO(
+public record GenreResponseDTO(
         Long id,
         Long tmdbId,
         String name,

@@ -1,6 +1,6 @@
 package dk.ek.api;
 
-import dk.ek.dto.tmdb.CreditsDTO;
+import dk.ek.dto.tmdb.CreditsResultDTO;
 import dk.ek.dto.tmdb.GenreResultDTO;
 import dk.ek.dto.tmdb.MovieDetailsDTO;
 import dk.ek.dto.tmdb.MovieResultDTO;
@@ -25,7 +25,7 @@ public class ApiReader {
     public String readAPI(String url, String searchQuery, String year) {
         try {
             String buildUrl = url + "?api_key=" + apiKey + "&query=" + searchQuery + "&year=" + year;
-            // Create an HttpClient instance
+            // Create objekt der komuniker med TMDb.
             HttpClient client = HttpClient.newHttpClient();
 
             // Create a request
@@ -37,12 +37,12 @@ public class ApiReader {
             // Send the request and get the response
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            // Check the status code and print the response
+            // Check the status
             if (response.statusCode() != 200) {
                 throw new RuntimeException("GET request failed. Status code: " + response.statusCode());
             }
-
-            return response.body();  //SON-i som TMDb returner
+          // returner responsen fra TMDb som json
+            return response.body();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,9 +137,10 @@ public class ApiReader {
     }
 
     // Konverterer credits JSON til CreditsDTO med Jackson.
-    public CreditsDTO convertCreditsFromJson(String json) {
+    public CreditsResultDTO convertCreditsFromJson(String json) {
         try {
-            return objectMapper.readValue(json, CreditsDTO.class);
+            //Her bruger vi Jackson ObjectMapper til at konvertere JSON til DTO
+            return objectMapper.readValue(json, CreditsResultDTO.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -215,8 +216,8 @@ public class ApiReader {
         }
     }
 }
-//from template/kod of profesor
-// ApiReader henter JSON-data fra TMDb API
-// og konverterer JSON til MovieResultDTO med Jackson.
-//ApiReader/Client bruges til at kommunikere med et API og hente data.(for alle project)
+//From template/kod af profesor
+//ApiReader kommunikerer med TMDb API'et.
+// Den sender HTTP GET requests og henter data som JSON.
+// Derefter bruger den Jackson ObjectMapper til at konvertere JSON-data til DTO'er.
 

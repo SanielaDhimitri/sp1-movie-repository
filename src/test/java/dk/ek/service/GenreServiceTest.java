@@ -2,7 +2,7 @@ package dk.ek.service;
 
 import dk.ek.config.HibernateTestConfig;
 import dk.ek.dao.GenreDAO;
-import dk.ek.dto.response.GenreResponseDTO;
+import dk.ek.dto.dbresponse.GenreResponseDTO;
 import dk.ek.dto.tmdb.GenreDTO;
 import dk.ek.entity.Genre;
 import dk.ek.exceptions.ApiException;

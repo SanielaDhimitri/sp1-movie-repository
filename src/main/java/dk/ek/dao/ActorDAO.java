@@ -5,7 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
 import java.util.List;
-
+//arv methods from generic CRUD
 public class ActorDAO extends GenericDAO<Actor> {
 
     public ActorDAO(EntityManagerFactory emf) {
@@ -17,7 +17,7 @@ public class ActorDAO extends GenericDAO<Actor> {
     @Override
     public List<Actor> findAll() {
 
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = emf.createEntityManager();//kommuniker med db
 
         List<Actor> actors = em.createQuery(
                 "SELECT DISTINCT a FROM Actor a LEFT JOIN FETCH a.movies",

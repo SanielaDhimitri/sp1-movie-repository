@@ -2,7 +2,7 @@ package dk.ek.service;
 
 import dk.ek.dao.DirectorDAO;
 import dk.ek.dto.tmdb.CrewDTO;
-import dk.ek.dto.response.DirectorResponseDTO;
+import dk.ek.dto.dbresponse.DirectorResponseDTO;
 import dk.ek.entity.Director;
 import dk.ek.entity.Movie;
 import dk.ek.exceptions.ApiException;

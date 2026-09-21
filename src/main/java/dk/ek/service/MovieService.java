@@ -8,9 +8,9 @@ import dk.ek.dao.DirectorDAO;
 import dk.ek.dao.GenreDAO;
 import dk.ek.dao.MovieDAO;
 
-import dk.ek.dto.response.MovieResponseDTO;
+import dk.ek.dto.dbresponse.MovieResponseDTO;
 import dk.ek.dto.tmdb.ActorDTO;
-import dk.ek.dto.tmdb.CreditsDTO;
+import dk.ek.dto.tmdb.CreditsResultDTO;
 import dk.ek.dto.tmdb.CrewDTO;
 import dk.ek.dto.tmdb.GenreDTO;
 import dk.ek.dto.tmdb.MovieDetailsDTO;
@@ -72,11 +72,11 @@ public class MovieService {
 // Actors, director og genres findes/oprettes gennem DAO-laget.
     public MovieResponseDTO createMovieWithRelations(
             MovieDTO movieDTO,
-            CreditsDTO creditsDTO,
+            CreditsResultDTO creditsResultDTO,
             MovieDetailsDTO detailsDTO
     ) {
 
-        // Tjekker om movie allerede findes.
+        // Først, Tjekker om movie allerede findes.
         Movie existingMovie =
                 movieDAO.findByTmdbId((long) movieDTO.id());
 
@@ -90,7 +90,7 @@ public class MovieService {
 
         // ---------- ACTORS ----------
 
-        for (ActorDTO actorDTO : creditsDTO.cast()) {
+        for (ActorDTO actorDTO : creditsResultDTO.cast()) {
 
             Actor actor =
                     actorDAO.findByTmdbId(actorDTO.id());
@@ -110,7 +110,7 @@ public class MovieService {
 
         // ---------- DIRECTOR ----------
 
-        for (CrewDTO crewDTO : creditsDTO.crew()) {
+        for (CrewDTO crewDTO : creditsResultDTO.crew()) {
 
             if ("Director".equals(crewDTO.job())) {
 
@@ -153,7 +153,7 @@ public class MovieService {
         }
 
 
-        // Gemmer den komplette Movie med relationships.
+        // Gemmer  Movie med relationships.
         movieDAO.create(movie);
 
         return toDTO(movie);
@@ -361,5 +361,24 @@ public class MovieService {
                 .map(this::toDTO)
                 .toList();
     }
+    // BONUS 3 - DELETE MOVIES SOM IKKE LÆNGERE FINDES I TMDb
+
+    public void deleteMoviesNotInTmdb(List<Long> tmdbMovieIds) {
+
+        List<Movie> moviesInDatabase = movieDAO.findAll();
+
+        for (Movie movie : moviesInDatabase) {
+
+            if (!tmdbMovieIds.contains(movie.getTmdbId())) {
+
+                movieDAO.delete(movie.getId());
+
+                System.out.println(
+                        "Deleted movie: " + movie.getTitle()
+                );
+            }
+        }
+    }
+
 }
 

@@ -1,4 +1,4 @@
-package dk.ek.dto.response;
+package dk.ek.dto.dbresponse;
 
 import java.time.LocalDate;
 import java.util.List;

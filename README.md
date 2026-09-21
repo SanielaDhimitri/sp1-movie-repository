@@ -329,4 +329,166 @@ Main / Client
 
 ## Project Purpose
 
-The purpose of the project is to demonstrate how a Java backend can integrate with an external REST API, convert JSON data into DTOs, store relational data using JPA/Hibernate and provide backend functionality through a Service and DAO architecture.
+The purpose of this project is to demonstrate how a Java backend can integrate with an external REST API, convert JSON data into DTOs using Jackson, store relational data in PostgreSQL using JPA/Hibernate, and structure the application using Service and DAO layers.
+---
+
+## Projektets funktionalitet
+
+Projektet er en backend-applikation, der henter danske film fra TMDb API og gemmer data i en PostgreSQL-database ved hjælp af JPA/Hibernate.
+
+Backend-løsningen indeholder følgende funktionalitet:
+
+- Henter danske film fra de sidste 5 år fra TMDb API.
+- Konverterer JSON-data til DTO'er med Jackson.
+- Gemmer movies, actors, directors og genres i databasen.
+- Bruger separate DTO'er og entities.
+- Bruger Service Layer til forretningslogik og DTO/Entity-konvertering.
+- Bruger DAO Layer til kommunikation med databasen via JPA.
+- Understøtter CRUD-operationer for movies.
+- Kan hente alle movies, actors, directors og genres.
+- Kan søge efter movies via titel.
+- Kan finde alle movies inden for en bestemt genre.
+- Beregner den gennemsnitlige rating.
+- Finder top 10 højeste ratede movies.
+- Finder top 10 laveste ratede movies.
+- Finder top 10 mest populære movies.
+- Håndterer fejl med ApiException.
+- Funktionaliteten er testet med JUnit og Testcontainers.
+
+
+## Bonusfunktionalitet
+
+Projektet implementerer også bonusfunktionalitet:
+
+- Finder alle movies for en bestemt actor.
+- Finder alle movies for en bestemt director.
+- Kan hente data fra TMDb igen og synkronisere databasen med de aktuelle movies.
+- Henter flere TMDb-sider parallelt med Future og ExecutorService.
+- Parallel fetching er begrænset til 4 threads.
+
+
+## Resultater
+
+### Import fra TMDb
+
+Ved den seneste import blev der hentet:
+
+- 1519 danske movies fra de sidste 5 år.
+- Data blev hentet fra 76 sider fra TMDb API.
+- JSON-data blev konverteret til DTO'er med Jackson.
+- Movies, actors, directors og genres blev gemt i PostgreSQL-databasen.
+
+
+### Movies i databasen
+
+Efter importen indeholdt databasen:
+
+- 1519 movies.
+
+Eksempel på en movie hentet fra databasen:
+
+- Movie: Zip Wire
+- Release date: 2026-08-31
+- Rating: 7.6
+- Popularity: 1.3345
+- Director: Howard J. Ford
+- Genres: Action, Thriller
+
+
+### Søgning efter movies
+
+Backend kan søge efter movies ud fra en del af titlen.
+
+Søgningen er case-insensitive og returnerer alle movies, hvor søgeteksten indgår i titlen.
+
+
+### Rating
+
+Backend kan beregne den gennemsnitlige rating for alle movies i databasen.
+
+Derudover kan backend hente:
+
+- Top 10 højest ratede movies.
+- Top 10 lavest ratede movies.
+- Top 10 mest populære movies.
+
+
+### Actors
+
+Actors bliver gemt i databasen og er relateret til deres movies gennem en Many-to-Many relation.
+
+Backend kan hente alle actors og vise de movies, som den enkelte actor har medvirket i.
+
+
+### Directors
+
+Directors bliver gemt i databasen og er relateret til movies gennem en One-to-Many / Many-to-One relation.
+
+Backend kan hente alle directors og vise de movies, som den enkelte director har instrueret.
+
+
+### Genres
+
+Genres bliver gemt i databasen og er relateret til movies gennem en Many-to-Many relation.
+
+Backend kan hente alle genres og finde alle movies inden for en bestemt genre.
+
+
+## Bonusresultater
+
+### Bonus 1 – Movies for en bestemt actor
+
+Backend kan finde en bestemt actor og returnere en liste over de movies, som personen har medvirket i.
+
+
+### Bonus 2 – Movies for en bestemt director
+
+Backend kan finde en bestemt director og returnere en liste over de movies, som personen har instrueret.
+
+
+### Bonus 3 – Synkronisering med TMDb
+
+Backend kan hente data fra TMDb igen og sammenligne TMDb-data med de movies, der allerede findes i databasen.
+
+- Nye movies kan tilføjes til databasen.
+- Movies, som ikke længere findes i TMDb-resultatet, kan fjernes fra databasen.
+- Eksisterende movies bliver ikke oprettet igen.
+
+
+### Bonus 4 – Parallel fetching
+
+TMDb-siderne kan hentes parallelt ved hjælp af:
+
+- ExecutorService
+- Future
+- FixedThreadPool
+
+Thread poolen er begrænset til 4 threads.
+
+Ved testen kunne flere sider derfor hentes parallelt, eksempelvis:
+
+Henter side 1 | Thread: pool-1-thread-1  
+Henter side 2 | Thread: pool-1-thread-2  
+Henter side 3 | Thread: pool-1-thread-3  
+Henter side 4 | Thread: pool-1-thread-4
+
+De samme 4 threads bliver derefter genbrugt til de resterende sider.
+
+
+## Tests
+
+Projektet er testet med JUnit og Testcontainers.
+
+Testene kontrollerer blandt andet:
+
+- Create
+- Read
+- Update
+- Delete
+- Find by ID
+- Find by TMDb ID
+- Service Layer
+- Error handling
+- Entity relationships
+
+Testene er gennemført successfully.

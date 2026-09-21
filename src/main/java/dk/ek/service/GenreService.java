@@ -2,7 +2,7 @@ package dk.ek.service;
 
 import dk.ek.dao.GenreDAO;
 import dk.ek.dto.tmdb.GenreDTO;
-import dk.ek.dto.response.GenreResponseDTO;
+import dk.ek.dto.dbresponse.GenreResponseDTO;
 import dk.ek.entity.Genre;
 import dk.ek.entity.Movie;
 import dk.ek.exceptions.ApiException;
