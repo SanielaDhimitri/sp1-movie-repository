@@ -523,7 +523,7 @@ The tests use a separate PostgreSQL test database through Testcontainers.
 
 Example when importing a movie:
 
-```text
+text
 TMDb API
    ↓
 JSON
@@ -539,11 +539,10 @@ Movie / Actor / Director / Genre Entities
 DAO
    ↓
 PostgreSQL
-```
 
 When retrieving data:
 
-```text
+text
 PostgreSQL
    ↓
 DAO
@@ -555,7 +554,7 @@ Service
 ResponseDTO
    ↓
 Main / Client
-```
+
 
 ---
 
