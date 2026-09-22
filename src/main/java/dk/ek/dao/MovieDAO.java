@@ -104,7 +104,7 @@ public class MovieDAO extends GenericDAO<Movie> {
 
 
     // =========================================================
-    // AVERAGE RATING
+    // AVERAGE RATING:gennemsnit
     // =========================================================
 
     public Double getAverageRating() {
