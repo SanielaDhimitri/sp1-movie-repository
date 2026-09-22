@@ -1,3 +1,236 @@
+# User Stories og status
+
+## User Story 1 – Hent danske movies fra TMDb
+
+**User Story:**  
+Som klient vil jeg kunne hente danske movies fra TMDb, så de kan gemmes og bruges i backend-systemet.
+
+**Acceptance Criteria:**
+- Der hentes danske movies fra de sidste 5 år.
+- Data hentes fra TMDb REST API.
+- JSON-data konverteres til DTO'er med Jackson.
+- Movie details og credits hentes fra TMDb.
+- Movies, actors, directors og genres gemmes i PostgreSQL.
+
+**Tasks:**
+- Opret ApiReader med HttpClient.
+- Opret forbindelse til TMDb API.
+- Opret DTO'er til TMDb-data.
+- Parse JSON med Jackson ObjectMapper.
+- Hent movie details og credits.
+- Konverter DTO'er til entities.
+- Gem data via Service Layer og DAO Layer.
+
+**Status:** Færdig
+
+
+## User Story 2 – Gem movies og relationer i databasen
+
+**User Story:**  
+Som klient vil jeg kunne gemme movies med deres actors, director og genres, så alle relevante oplysninger findes i databasen.
+
+**Acceptance Criteria:**
+- Movies gemmes i PostgreSQL.
+- Actors gemmes og forbindes til movies.
+- Director gemmes og forbindes til movies.
+- Genres gemmes og forbindes til movies.
+- Eksisterende data oprettes ikke unødvendigt igen.
+
+**Tasks:**
+- Opret Movie entity.
+- Opret Actor entity.
+- Opret Director entity.
+- Opret Genre entity.
+- Implementer Many-to-Many mellem Movie og Actor.
+- Implementer Many-to-One / One-to-Many mellem Movie og Director.
+- Implementer Many-to-Many mellem Movie og Genre.
+- Implementer DAO- og Service-logik.
+
+**Status:** Færdig
+
+
+## User Story 3 – CRUD på movies
+
+**User Story:**  
+Som klient vil jeg kunne oprette, hente, opdatere og slette movies, så jeg kan administrere data i databasen.
+
+**Acceptance Criteria:**
+- En movie kan oprettes.
+- Alle movies kan hentes.
+- En movie kan findes via database-ID.
+- En movie kan findes via TMDb-ID.
+- En movie kan opdateres.
+- En movie kan slettes.
+- Der returneres en fejl, hvis en movie ikke findes.
+
+**Tasks:**
+- Implementer create.
+- Implementer findAll.
+- Implementer findById.
+- Implementer findByTmdbId.
+- Implementer update.
+- Implementer delete.
+- Implementer ApiException.
+- Test CRUD-funktionaliteten.
+
+**Status:** Færdig
+
+
+## User Story 4 – Søg efter movies
+
+**User Story:**  
+Som klient vil jeg kunne søge efter movies ud fra titel, så jeg nemt kan finde bestemte movies.
+
+**Acceptance Criteria:**
+- Klienten kan søge med hele eller dele af en titel.
+- Søgningen er case-insensitive.
+- Alle movies, hvor søgeteksten indgår i titlen, returneres.
+
+**Tasks:**
+- Implementer søgning i MovieDAO.
+- Implementer søgning i MovieService.
+- Konverter resultatet til MovieResponseDTO.
+- Test søgefunktionen.
+
+**Status:** Færdig
+
+
+## User Story 5 – Find movies efter genre
+
+**User Story:**  
+Som klient vil jeg kunne finde movies inden for en bestemt genre, så jeg kan se alle movies i den valgte kategori.
+
+**Acceptance Criteria:**
+- Alle genres kan hentes.
+- En bestemt genre kan vælges.
+- Alle movies tilknyttet genren returneres.
+
+**Tasks:**
+- Implementer GenreDAO.
+- Implementer GenreService.
+- Implementer relationen mellem Movie og Genre.
+- Implementer query til movies efter genre.
+- Test funktionaliteten.
+
+**Status:** Færdig
+
+
+## User Story 6 – Movie-statistik
+
+**User Story:**  
+Som klient vil jeg kunne se statistik over movies, så jeg kan sammenligne ratings og popularitet.
+
+**Acceptance Criteria:**
+- Den gennemsnitlige rating kan beregnes.
+- Top 10 højest ratede movies kan hentes.
+- Top 10 lavest ratede movies kan hentes.
+- Top 10 mest populære movies kan hentes.
+
+**Tasks:**
+- Implementer beregning af gennemsnitlig rating.
+- Implementer top 10 højeste rating.
+- Implementer top 10 laveste rating.
+- Implementer top 10 efter popularity.
+- Test resultaterne.
+
+**Status:** Færdig
+
+
+## User Story 7 – Actors
+
+**User Story:**  
+Som klient vil jeg kunne hente actors og se deres movies, så jeg kan se hvilke movies en actor har medvirket i.
+
+**Acceptance Criteria:**
+- Actors gemmes i databasen.
+- Alle actors kan hentes.
+- En actor er relateret til sine movies.
+- Movies for en bestemt actor kan findes.
+
+**Tasks:**
+- Opret Actor entity.
+- Opret ActorDAO.
+- Opret ActorService.
+- Opret ActorResponseDTO.
+- Implementer Movie-Actor relationen.
+- Implementer søgning efter movies for en actor.
+
+**Status:** Færdig
+
+
+## User Story 8 – Directors
+
+**User Story:**  
+Som klient vil jeg kunne hente directors og se deres movies, så jeg kan se hvilke movies en director har instrueret.
+
+**Acceptance Criteria:**
+- Directors gemmes i databasen.
+- Alle directors kan hentes.
+- En director er relateret til sine movies.
+- Movies for en bestemt director kan findes.
+
+**Tasks:**
+- Opret Director entity.
+- Opret DirectorDAO.
+- Opret DirectorService.
+- Opret DirectorResponseDTO.
+- Implementer Movie-Director relationen.
+- Implementer søgning efter movies for en director.
+
+**Status:** Færdig
+
+
+# Bonus User Stories
+
+## Bonus 1 – Synkronisering med TMDb
+
+**User Story:**  
+Som klient vil jeg kunne synkronisere databasen med TMDb, så databasen kan opdateres med de aktuelle movies.
+
+**Acceptance Criteria:**
+- Nye movies fra TMDb kan tilføjes.
+- Eksisterende movies oprettes ikke igen.
+- Movies, som ikke længere findes i TMDb-resultatet, kan fjernes.
+
+**Tasks:**
+- Hent aktuelle movies fra TMDb.
+- Sammenlign TMDb-data med databasen.
+- Tilføj nye movies.
+- Fjern movies, der ikke længere findes i resultatet.
+
+**Status:** Færdig
+
+
+## Bonus 2 – Parallel fetching
+
+**User Story:**  
+Som klient vil jeg kunne hente flere TMDb-sider parallelt, så importen kan udføres hurtigere.
+
+**Acceptance Criteria:**
+- Flere sider kan hentes samtidigt.
+- Der bruges ExecutorService.
+- Der bruges Future.
+- Thread pool er begrænset til 4 threads.
+- De samme threads genbruges til de resterende sider.
+
+**Tasks:**
+- Opret FixedThreadPool med 4 threads.
+- Opret Callable-tasks til TMDb requests.
+- Gem resultaterne i Future.
+- Saml resultaterne efter fetching.
+- Luk ExecutorService korrekt.
+
+**Status:**  Færdig
+
+
+# Screencast
+
+I screencasten gennemgår jeg kort projektets kode og struktur, viser at programmet kører og viser data i PostgreSQL-databasen.
+
+**Link til screencast:**  
+
+https://github.com/SanielaDhimitri/sp1-movie-repository
+
 # SP1 - Movie Repository
 
 Backend project for 3rd semester Datamatiker.
@@ -12,7 +245,7 @@ The application works with movies, actors, directors and genres.
 
 The project is divided into layers:
 
-```text
+text
 TMDb REST API
       ↓
    ApiReader
@@ -26,7 +259,6 @@ TMDb REST API
 JPA / Hibernate
       ↓
  PostgreSQL
-```
 
 ### ApiReader
 `ApiReader` communicates with the TMDb REST API using `HttpClient`.

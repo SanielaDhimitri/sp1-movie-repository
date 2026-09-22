@@ -197,10 +197,10 @@ public class Main {
 
         if (IMPORT_DANISH_MOVIES) {
 
-            // Gemmer alle TMDb-id'er, som findes i TMDb lige nu.
-            // Bruges senere til BONUS 3.
+            // Opretter en tom liste til AT GEMME alle movie-id'er fra TMDb.
+            // Listen bruges senere til at sammenligne TMDb med databasen.
             List<Long> tmdbMovieIds = new ArrayList<>();
-
+// URL til TMDb
             String moviesUrl =
                     "https://api.themoviedb.org/3/discover/movie";
 
@@ -209,49 +209,51 @@ public class Main {
             // HENTER FØRSTE SIDE
             // ======================================================
 
-            // Henter side 1 som JSON.
+            // Henter FØRST side, som JSON.
             String firstJson =
                     apiReader.discoverMovies(moviesUrl, 1);
 
-            // JSON -> MovieResultDTO med Jackson.
+            // JSON -> DTO med Jackson.
             MovieResultDTO firstPage =
                     apiReader.convertFromJson(firstJson);
 
+            // Viser hvor mange movies TMDb har fundet.
             System.out.println(
                     "Total movies: " + firstPage.totalResults()
             );
-
+            // Viser hvor mange pages vi skal hente fra TMDb.
             System.out.println(
                     "Total pages: " + firstPage.totalPages()
             );
 
 
             // ======================================================
+            // Til Bonus 4 bruger jeg ExecutorService, Future og 4 threads
             // BONUS 4 - PARALLEL FETCHING
             // ======================================================
 
-            // Opretter en thread pool med maksimum 4 threads.
-            // Derfor kan maksimum 4 pages hentes fra TMDb samtidig.
+            // Opretter en thread pool
+            //med maksimum 4 threads.
+
             ExecutorService executor =
                     Executors.newFixedThreadPool(4);
 
             // Her gemmer vi Futures.
-            // Hver Future repræsenterer resultatet fra én TMDb-page.
+            //Future repræsenterer resultatet fra én TMDb-page.
             List<Future<MovieResultDTO>> futures =
                     new ArrayList<>();
 
 
-            // Sender alle pages som tasks til ExecutorService.
+         // Går igennem alle pages fra TMDb.
             for (int page = 1;
                  page <= firstPage.totalPages();
                  page++) {
 
-                // page skal gemmes i en lokal variabel,
-                // så den kan bruges inde i lambda-expression.
+                // Gemmer page-nummeret, så det kan bruges i lambdaen.
                 int currentPage = page;
 
-                // submit() sender opgaven til thread pool.
-                // Future holder resultatet, som kommer senere.
+                // Sender opgaven til thread poolen.
+                // En ledig thread henter denne page fra TMDb.
                 Future<MovieResultDTO> future =
                         executor.submit(() -> {
 
@@ -260,8 +262,7 @@ public class Main {
                                             + " | Thread: "
                                             + Thread.currentThread().getName()
                             );
-
-                            // Henter den aktuelle page fra TMDb som JSON.
+                            // Henter JSON fra den aktuelle TMDb-page.
                             String pageJson =
                                     apiReader.discoverMovies(
                                             moviesUrl,
@@ -274,7 +275,7 @@ public class Main {
                             );
                         });
 
-                // Gemmer Future i listen.
+                // Gemmer Future i listen op.
                 futures.add(future);
             }
 
@@ -305,7 +306,7 @@ public class Main {
                         // ==========================================
 
                         // Gemmer movie-id'et fra TMDb.
-                        // Senere sammenlignes listen med databasen.
+
                         tmdbMovieIds.add(
                                 (long) movieDTO.id()
                         );
